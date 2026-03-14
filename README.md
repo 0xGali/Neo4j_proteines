@@ -3,6 +3,9 @@
 //mettre Entry en id et nommer le label "Proteine"
 //executer les query presente dans database_query.txt
 
-pour lancer l'application Flask : python ./flask_app/app.py
+installer les dépendance python : pip install flask
+pip install neo4j
+
+pour lancer l'application Flask : python .\flask_app\app.py
 
 l'application se lance sur localhost:8000

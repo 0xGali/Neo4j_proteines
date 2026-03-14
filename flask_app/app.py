@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, render_template
 from neo4j import GraphDatabase
 
 
@@ -35,24 +35,32 @@ def homeSeuil(seuil):
         result = session.run("""
             MATCH (p:Proteine)
             OPTIONAL MATCH (p)-[r:SIMILAR]->(v:Proteine)
-            WHERE r.jaccard >= $seuil ORDER BY r.jaccard DESC
-            RETURN p, collect(v) as voisins
+            WITH p, collect({voisin: v, jaccard: r.jaccard}) as voisins
+            WHERE ANY(voisin IN voisins WHERE voisin.voisin IS NOT NULL AND voisin.jaccard >= $seuil)
+            RETURN p, [voisin IN voisins WHERE voisin.voisin IS NOT NULL AND voisin.jaccard >= $seuil] as voisins_filtres
         """, seuil=float(seuil))
 
         proteins = []
         for record in result:
             p = record["p"]
-            voisins = record["voisins"]
+            voisins = record["voisins_filtres"]
             proteins.append({
-                "Entry": p.get("Entry",""),
-                "EntryName": p.get("EntryName",""),
-                "InterPro": p.get("InterPro",""),
-                "Sequence": p.get("Sequence",""),
-                "ProteinNames" : p.get("ProteinNames",""),
-                "voisins": [{"EntryName": v.get("EntryName","")} for v in voisins]
-                })
+                "Entry": p.get("Entry", ""),
+                "EntryName": p.get("EntryName", ""),
+                "InterPro": p.get("InterPro", ""),
+                "Sequence": p.get("Sequence", ""),
+                "ProteinNames": p.get("ProteinNames", ""),
+                "voisins": [
+                    {
+                        "EntryName": v["voisin"].get("EntryName", ""),
+                        "jaccard": v["jaccard"]
+                    }
+                    for v in voisins
+                ]
+            })
 
     return render_template('base.html', proteins=proteins)
+
 
 # Configuration de la connexion à Neo4j
 uri = "neo4j://127.0.0.1:7687"
