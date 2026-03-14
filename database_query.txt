@@ -1,0 +1,29 @@
+//Suppression de toute les lignes sauf 2000
+MATCH (p:Proteine)
+WITH p
+ORDER BY p.Entry
+LIMIT 2000
+SET p.keep = true
+RETURN count(p);
+
+MATCH (p:Proteine)
+WHERE NOT p.keep IS NOT NULL
+DELETE p;
+
+
+//création de la relation SIMILAR
+
+CALL apoc.periodic.iterate(
+"MATCH (p1:Proteine) WHERE p1.InterPro IS NOT NULL RETURN p1",
+"MATCH (p2:Proteine)
+WHERE id(p2) > id(p1) AND p2.InterPro IS NOT NULL
+WITH p1, p2,
+[x IN split(p1.InterPro, \";\") WHERE x IN split(p2.InterPro, \";\") | x] AS inter
+WHERE size(inter) > 0
+WITH p1, p2, inter,
+size(split(p1.InterPro, \";\")) + size(split(p2.InterPro, \";\")) - size(inter) AS union_size
+WITH p1, p2, toFloat(size(inter)) / union_size AS jaccard
+WHERE jaccard >= 0.3
+MERGE (p1)-[:SIMILAR {jaccard: jaccard}]->(p2)",
+{batchSize: 100, parallel: false}
+)

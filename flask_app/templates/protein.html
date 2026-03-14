@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>Protein</title>
+  </style>
+</head>
+<body>
+    <h1>Protéine : {{ protein.Entry }}</h1>
+    <h2>{{ protein.EntryName}}</h2>
+    <h3>Nom générique : {{protein.ProteinNames}}</h3>
+    <h4>Sequence : {{protein.Sequence}}</h4>
+    <h4>Interpros :</h4>
+    <ul>
+    {% for interpro in protein.InterPro.split(";") %}
+        <li>
+        {{ interpro }}
+        </li>
+        {% endfor %}
+    </ul>
+    <h4>Voisins :</h4>
+    <ul>
+    {% for voisin in protein.voisins %}
+        <li>
+        <a href="/protein/{{voisin.Entry}}">{{ voisin.EntryName }}</a> (poids de jaccard : {{voisin.jaccard}})
+        </li>
+        {% endfor %}
+    </ul>
+  </section>
+</body>
+</html>
